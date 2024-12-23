@@ -1,5 +1,6 @@
 import pygame
 import random
+import time
 
 # Inicialização do Pygame
 pygame.init()
@@ -43,17 +44,19 @@ animation_speed = 200
 last_animation_time = pygame.time.get_ticks()
 
 # Configuração dos obstáculos
-obstacle_speed = 5
+obstacle_speed = 1.25
 max_obstacle_speed = 15
 obstacles = []
 
 # Fundo em movimento
 bg_x = 0
 bg_speed = 2
+start_time = time.time()  # Guardar o tempo inicial para controlar a velocidade
 
 # Pontuação
 score = 0
 speed_increment_threshold = 10  # Aumenta a velocidade a cada 10 pontos
+
 
 def criar_obstaculo():
     """Cria um novo obstáculo em uma pista aleatória."""
@@ -63,10 +66,12 @@ def criar_obstaculo():
         y = PLAYER_Y_POS[pista] - obstacle_img.get_height() + 10
         obstacles.append([x, y, pista])
 
+
 def desenhar_pistas():
     """Desenha as pistas."""
     for i, pista in enumerate(pista_imgs):
         screen.blit(pista, (0, PLAYER_Y_POS[i] + PLAYER_HEIGHT // 2))
+
 
 def desenhar_jogador():
     """Desenha o jogador com animação controlada por tempo."""
@@ -80,12 +85,14 @@ def desenhar_jogador():
     player_y = PLAYER_Y_POS[player_pos] - PLAYER_HEIGHT + 23
     screen.blit(player_animation[player_animation_index], (PLAYER_X, player_y))
 
+
 def desenhar_obstaculos():
     """Desenha e atualiza a posição dos obstáculos."""
     for obstacle in obstacles:
         screen.blit(obstacle_img, (obstacle[0], obstacle[1]))
         obstacle[0] -= obstacle_speed
     obstacles[:] = [o for o in obstacles if o[0] > -obstacle_img.get_width()]
+
 
 def verificar_colisao():
     """Verifica se o jogador colidiu com algum obstáculo."""
@@ -94,20 +101,80 @@ def verificar_colisao():
             return True
     return False
 
+
 def desenhar_background():
-    """Desenha o fundo em movimento."""
-    global bg_x
-    bg_x -= bg_speed
-    if bg_x <= -LARGURA:
+    """Desenha o fundo em movimento, criando um looping contínuo."""
+    global bg_x, bg_speed
+    largura_fundo = background_img.get_width()  # Largura real da imagem do fundo
+    bg_x -= bg_speed  # Move o fundo para a esquerda
+
+    # Quando o fundo atingir a posição final (completa a tela), reinicia a posição
+    if bg_x <= -largura_fundo:
         bg_x = 0
-    screen.blit(background_img, (bg_x, 0))
-    screen.blit(background_img, (bg_x + LARGURA, 0))
+
+    # Desenha o fundo duas vezes para criar o efeito de looping
+    screen.blit(background_img, (bg_x, 0))  # Fundo à esquerda
+    screen.blit(background_img, (bg_x + largura_fundo, 0))  # Fundo à direita
+
+
+def aumentar_velocidade():
+    """Aumenta a velocidade do fundo gradualmente de acordo com o tempo."""
+    global bg_speed
+    elapsed_time = time.time() - start_time  # Tempo decorrido desde o início do jogo
+
+    # Aumenta a velocidade do fundo com base no tempo decorrido
+    bg_speed = 2 + elapsed_time / 50  # Ajuste a divisão para controlar a aceleração
+
 
 def desenhar_pontuacao():
     """Desenha a pontuação na tela."""
     font = pygame.font.Font(None, 36)
     text = font.render(f"Score: {score}", True, PRETO)
     screen.blit(text, (10, 10))
+
+
+def tela_game_over():
+    """Exibe a tela de Game Over com opções de 'Tente Novamente' e 'Menu'."""
+    font = pygame.font.Font(None, 50)
+    option_rects = []
+    options = ["Tente Novamente", "Menu"]
+
+    while True:
+        screen.fill(PRETO)
+        game_over_text = font.render("Game Over", True, BRANCO)
+        game_over_width, game_over_height = game_over_text.get_size()
+        screen.blit(game_over_text, ((LARGURA - game_over_width) // 2, ALTURA // 3))
+
+        option_rects = []
+        mouse_pos = pygame.mouse.get_pos()
+
+        for i, option in enumerate(options):
+            text = font.render(option, True, BRANCO)
+            text_width, text_height = text.get_size()
+            x = (LARGURA - text_width) // 2
+            y = ALTURA // 2 + i * 60
+            rect = pygame.Rect(x, y, text_width, text_height)
+            option_rects.append(rect)
+
+            if rect.collidepoint(mouse_pos):
+                text = font.render(option, True, (120, 20, 255))
+
+            screen.blit(text, (x, y))
+
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                for i, rect in enumerate(option_rects):
+                    if rect.collidepoint(event.pos):
+                        if i == 0:  # Tente Novamente
+                            return True
+                        elif i == 1:  # Menu
+                            return False  # Retorna para o menu sem fechar o jogo
+
 
 # Menu inicial
 def menu():
@@ -155,41 +222,58 @@ def menu():
                         if i == 0:
                             menu_running = False
                         elif i == 1:
-                            pygame.quit()
-                            exit()
+                            return False  # Se escolher "Exit", retorna False para encerrar o jogo
 
-menu()
+    return True  # Se escolheu "Start", retorna True para iniciar o jogo
+
 
 # Loop principal
 running = True
 while running:
-    clock.tick(FPS)
-    score += 1
+    if not menu():  # Se o jogador escolher "Exit" no menu, encerra o jogo
+        break
 
-    if score % speed_increment_threshold == 0 and obstacle_speed < max_obstacle_speed:
-        obstacle_speed += 1
+    score = 0
+    obstacles = []
+    player_pos = 1
+    bg_x = 0
+    obstacle_speed = 1.25
+    start_time = time.time()
 
-    for current_event in pygame.event.get():
-        if current_event.type == pygame.QUIT:
-            running = False
-        if current_event.type == pygame.KEYDOWN:
-            if current_event.key == pygame.K_UP and player_pos < 2:
-                player_pos += 1
-            elif current_event.key == pygame.K_DOWN and player_pos > 0:
-                player_pos -= 1
+    # Loop do jogo
+    while True:
+        clock.tick(FPS)
+        score += 1
 
-    if random.randint(1, 100) > 98:
-        criar_obstaculo()
+        if score % speed_increment_threshold == 0 and obstacle_speed < max_obstacle_speed:
+            obstacle_speed += 1
 
-    if verificar_colisao():
-        running = False
+        for current_event in pygame.event.get():
+            if current_event.type == pygame.QUIT:
+                running = False
+                break
+            if current_event.type == pygame.KEYDOWN:
+                if current_event.key == pygame.K_UP and player_pos < 2:
+                    player_pos += 1
+                elif current_event.key == pygame.K_DOWN and player_pos > 0:
+                    player_pos -= 1
 
-    desenhar_background()
-    desenhar_pistas()
-    desenhar_jogador()
-    desenhar_obstaculos()
-    desenhar_pontuacao()
+        if random.randint(1, 100) > 98:
+            criar_obstaculo()
 
-    pygame.display.flip()
+        if verificar_colisao():
+            if not tela_game_over():  # Se o jogador escolher "Menu", volta ao menu
+                break  # Se o jogador escolher "Tente Novamente", reinicia o jogo
+
+        # Aumenta a velocidade do fundo com o tempo
+        aumentar_velocidade()
+
+        desenhar_background()
+        desenhar_pistas()
+        desenhar_jogador()
+        desenhar_obstaculos()
+        desenhar_pontuacao()
+
+        pygame.display.flip()
 
 pygame.quit()
