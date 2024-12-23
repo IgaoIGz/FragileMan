@@ -134,10 +134,10 @@ def desenhar_pontuacao():
 
 
 def tela_game_over():
-    """Exibe a tela de Game Over com opções de 'Tente Novamente' e 'Menu'."""
+    """Exibe a tela de Game Over com a opção de 'Menu'."""
     font = pygame.font.Font(None, 50)
     option_rects = []
-    options = ["Tente Novamente", "Menu"]
+    options = ["Menu"]  # Apenas a opção de 'Menu'
 
     while True:
         screen.fill(PRETO)
@@ -170,9 +170,7 @@ def tela_game_over():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 for i, rect in enumerate(option_rects):
                     if rect.collidepoint(event.pos):
-                        if i == 0:  # Tente Novamente
-                            return True
-                        elif i == 1:  # Menu
+                        if i == 0:  # Menu
                             return False  # Retorna para o menu sem fechar o jogo
 
 
