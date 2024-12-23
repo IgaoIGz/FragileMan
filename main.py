@@ -9,13 +9,13 @@ pygame.init()
 # Configurações gerais
 LARGURA = 800
 ALTURA = 600
-FPS = 60
+FPS = 60  # Frames por segundo (controle de velocidade do jogo)
 
 # Cores
 BRANCO = (255, 255, 255)
 PRETO = (0, 0, 0)
 
-# Inicializa a tela
+# Inicializa a tela do jogo
 screen = pygame.display.set_mode((LARGURA, ALTURA))
 pygame.display.set_caption("Subway Surf Clone")
 clock = pygame.time.Clock()
@@ -32,30 +32,30 @@ pista_imgs = [
 ]
 
 # Configurações do jogador
-PLAYER_X = 100
-PLAYER_Y_POS = [520, 420, 320]
-PLAYER_WIDTH = player_img1.get_width()
-PLAYER_HEIGHT = player_img1.get_height()
-player_pos = 1
-player_animation = [player_img1, player_img2]
-player_animation_index = 0
+PLAYER_X = 100  # Posição inicial do jogador no eixo X
+PLAYER_Y_POS = [520, 420, 320]  # Posições verticais para as 3 pistas
+PLAYER_WIDTH = player_img1.get_width()  # Largura da imagem do jogador
+PLAYER_HEIGHT = player_img1.get_height()  # Altura da imagem do jogador
+player_pos = 1  # Posição inicial do jogador (pista do meio)
+player_animation = [player_img1, player_img2]  # Animação do jogador
+player_animation_index = 0  # Índice da animação atual
 
 # Controle da animação do jogador
-animation_speed = 200
-last_animation_time = pygame.time.get_ticks()
+animation_speed = 200  # Velocidade da troca de frames da animação
+last_animation_time = pygame.time.get_ticks()  # Guarda o tempo da última animação
 
 # Configuração dos obstáculos
-obstacle_speed = 1.25
-max_obstacle_speed = 15
-obstacles = []
+obstacle_speed = 1.25  # Velocidade inicial dos obstáculos
+max_obstacle_speed = 15  # Velocidade máxima dos obstáculos
+obstacles = []  # Lista de obstáculos no jogo
 
 # Fundo em movimento
-bg_x = 0
-bg_speed = 2
-start_time = time.time()  # Guardar o tempo inicial para controlar a velocidade
+bg_x = 0  # Posição horizontal inicial do fundo
+bg_speed = 2  # Velocidade do movimento do fundo
+start_time = time.time()  # Guarda o tempo inicial para controlar a velocidade do fundo
 
 # Pontuação
-score = 0
+score = 0  # Inicializa a pontuação
 speed_increment_threshold = 10  # Aumenta a velocidade a cada 10 pontos
 
 
@@ -65,29 +65,28 @@ def carregar_placar():
         with open("placar.json", "r") as f:
             placar = json.load(f)
     except FileNotFoundError:
-        placar = []
+        placar = []  # Se o arquivo não for encontrado, retorna uma lista vazia
     return placar
 
 
 # Função para salvar o placar dos líderes
 def salvar_placar(placar):
-    # Abertura do arquivo em modo de escrita e garantindo que seja tratado como texto
+    """Salva o placar dos líderes no arquivo JSON."""
     with open("placar.json", "w", encoding="utf-8") as f:
         json.dump(placar, f, ensure_ascii=False, indent=4)
+
 
 # Função para adicionar uma pontuação ao placar
 def adicionar_ao_placar(pontuacao):
     placar = carregar_placar()
-
-    # Adiciona a pontuação e ordena
-    placar.append(pontuacao)
+    placar.append(pontuacao)  # Adiciona a nova pontuação ao placar
     placar = sorted(placar, reverse=True)[:5]  # Mantém apenas as 5 maiores pontuações
-
     salvar_placar(placar)
 
 
 # Função para desenhar o placar dos líderes
 def desenhar_placar():
+    """Exibe o placar dos líderes na tela."""
     placar = carregar_placar()
     font = pygame.font.Font(None, 36)
 
@@ -101,17 +100,18 @@ def desenhar_placar():
 
     pygame.display.flip()
 
+
 def criar_obstaculo():
     """Cria um novo obstáculo em uma pista aleatória."""
-    pista = random.choice([0, 1, 2])
+    pista = random.choice([0, 1, 2])  # Escolhe uma pista aleatória para o obstáculo
     if not any(o[1] == pista for o in obstacles):  # Garante que não haverá obstáculo em todas as pistas
         x = LARGURA
-        y = PLAYER_Y_POS[pista] - obstacle_img.get_height() + 10
-        obstacles.append([x, y, pista])
+        y = PLAYER_Y_POS[pista] - obstacle_img.get_height() + 10  # Posição do obstáculo
+        obstacles.append([x, y, pista])  # Adiciona o obstáculo à lista
 
 
 def desenhar_pistas():
-    """Desenha as pistas."""
+    """Desenha as 3 pistas no jogo."""
     for i, pista in enumerate(pista_imgs):
         screen.blit(pista, (0, PLAYER_Y_POS[i] + PLAYER_HEIGHT // 2))
 
@@ -125,16 +125,16 @@ def desenhar_jogador():
         last_animation_time = current_time
         player_animation_index = (player_animation_index + 1) % len(player_animation)
 
-    player_y = PLAYER_Y_POS[player_pos] - PLAYER_HEIGHT + 23
+    player_y = PLAYER_Y_POS[player_pos] - PLAYER_HEIGHT + 23  # Posição vertical do jogador
     screen.blit(player_animation[player_animation_index], (PLAYER_X, player_y))
 
 
 def desenhar_obstaculos():
-    """Desenha e atualiza a posição dos obstáculos."""
+    """Desenha os obstáculos e atualiza suas posições."""
     for obstacle in obstacles:
         screen.blit(obstacle_img, (obstacle[0], obstacle[1]))
-        obstacle[0] -= obstacle_speed
-    obstacles[:] = [o for o in obstacles if o[0] > -obstacle_img.get_width()]
+        obstacle[0] -= obstacle_speed  # Move o obstáculo para a esquerda
+    obstacles[:] = [o for o in obstacles if o[0] > -obstacle_img.get_width()]  # Remove obstáculos fora da tela
 
 
 def verificar_colisao():
@@ -148,7 +148,7 @@ def verificar_colisao():
 def desenhar_background():
     """Desenha o fundo em movimento, criando um looping contínuo."""
     global bg_x, bg_speed
-    largura_fundo = background_img.get_width()  # Largura real da imagem do fundo
+    largura_fundo = background_img.get_width()  # Largura da imagem do fundo
     bg_x -= bg_speed  # Move o fundo para a esquerda
 
     # Quando o fundo atingir a posição final (completa a tela), reinicia a posição
@@ -170,14 +170,14 @@ def aumentar_velocidade():
 
 
 def desenhar_pontuacao():
-    """Desenha a pontuação na tela."""
+    """Desenha a pontuação atual na tela."""
     font = pygame.font.Font(None, 36)
     text = font.render(f"Score: {score}", True, PRETO)
     screen.blit(text, (10, 10))
 
 
 def tela_game_over():
-    """Exibe a tela de Game Over com a opção de 'Menu' ou 'Placar'."""
+    """Exibe a tela de Game Over com opções de 'Menu' ou 'Placar'."""
     font = pygame.font.Font(None, 50)
     option_rects = []
     options = ["Menu", "Ver Placar"]  # Adicionando a opção de "Ver Placar"
@@ -224,7 +224,7 @@ def tela_game_over():
                             return False  # Retorna ao menu após ver o placar
 
 
-# Menu inicial
+# ------- Menu inicial -------
 def menu():
     menu_running = True
     options = ["Start", "Exit"]
@@ -275,7 +275,7 @@ def menu():
     return True  # Se escolheu "Start", retorna True para iniciar o jogo
 
 
-# Loop principal
+# ------- Loop principal -------
 running = True
 while running:
     if not menu():  # Se o jogador escolher "Exit" no menu, encerra o jogo
@@ -312,6 +312,8 @@ while running:
         if verificar_colisao():
             if not tela_game_over():  # Se o jogador escolher "Menu", volta ao menu
                 break  # Se o jogador escolher "Tente Novamente", reinicia o jogo
+
+# ---chamando as funções---
 
         # Aumenta a velocidade do fundo com o tempo
         aumentar_velocidade()
