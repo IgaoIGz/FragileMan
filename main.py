@@ -1,6 +1,7 @@
 import pygame
 import random
 import time
+import json
 
 # Inicialização do Pygame
 pygame.init()
@@ -57,6 +58,48 @@ start_time = time.time()  # Guardar o tempo inicial para controlar a velocidade
 score = 0
 speed_increment_threshold = 10  # Aumenta a velocidade a cada 10 pontos
 
+
+# Função para carregar o placar dos líderes
+def carregar_placar():
+    try:
+        with open("placar.json", "r") as f:
+            placar = json.load(f)
+    except FileNotFoundError:
+        placar = []
+    return placar
+
+
+# Função para salvar o placar dos líderes
+def salvar_placar(placar):
+    # Abertura do arquivo em modo de escrita e garantindo que seja tratado como texto
+    with open("placar.json", "w", encoding="utf-8") as f:
+        json.dump(placar, f, ensure_ascii=False, indent=4)
+
+# Função para adicionar uma pontuação ao placar
+def adicionar_ao_placar(pontuacao):
+    placar = carregar_placar()
+
+    # Adiciona a pontuação e ordena
+    placar.append(pontuacao)
+    placar = sorted(placar, reverse=True)[:5]  # Mantém apenas as 5 maiores pontuações
+
+    salvar_placar(placar)
+
+
+# Função para desenhar o placar dos líderes
+def desenhar_placar():
+    placar = carregar_placar()
+    font = pygame.font.Font(None, 36)
+
+    screen.fill(PRETO)
+    placar_texto = font.render("Top Scores", True, BRANCO)
+    screen.blit(placar_texto, ((LARGURA - placar_texto.get_width()) // 2, 50))
+
+    for i, score in enumerate(placar):
+        score_text = font.render(f"{i+1}. {score}", True, BRANCO)
+        screen.blit(score_text, (LARGURA // 2 - score_text.get_width() // 2, 100 + i * 40))
+
+    pygame.display.flip()
 
 def criar_obstaculo():
     """Cria um novo obstáculo em uma pista aleatória."""
@@ -134,10 +177,13 @@ def desenhar_pontuacao():
 
 
 def tela_game_over():
-    """Exibe a tela de Game Over com a opção de 'Menu'."""
+    """Exibe a tela de Game Over com a opção de 'Menu' ou 'Placar'."""
     font = pygame.font.Font(None, 50)
     option_rects = []
-    options = ["Menu"]  # Apenas a opção de 'Menu'
+    options = ["Menu", "Ver Placar"]  # Adicionando a opção de "Ver Placar"
+
+    # Adicionar pontuação ao placar, se necessário
+    adicionar_ao_placar(score)
 
     while True:
         screen.fill(PRETO)
@@ -172,6 +218,10 @@ def tela_game_over():
                     if rect.collidepoint(event.pos):
                         if i == 0:  # Menu
                             return False  # Retorna para o menu sem fechar o jogo
+                        elif i == 1:  # Ver Placar
+                            desenhar_placar()
+                            time.sleep(3)  # Exibe o placar por 3 segundos
+                            return False  # Retorna ao menu após ver o placar
 
 
 # Menu inicial
