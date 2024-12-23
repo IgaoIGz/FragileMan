@@ -6,6 +6,11 @@ import json
 # Inicialização do Pygame
 pygame.init()
 
+# Carregar música de fundo
+pygame.mixer.music.load("assets/fragilemantheme.mp3")  # Substitua pelo caminho da sua música
+pygame.mixer.music.set_volume(0.5)  # Ajuste o volume entre 0.0 (silencioso) e 1.0 (máximo)
+pygame.mixer.music.play(loops=-1, start=0.0)  # A música começa a tocar em loop
+
 # Configurações gerais
 LARGURA = 800
 ALTURA = 600
